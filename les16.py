@@ -58,10 +58,13 @@ for _ in range(1000):
     loss.backward()       #Поиск значений частных производных
     optimizer.step()      #Корректировка весов
 
+#Тестирование
 model.eval()
+model.reset_parameters(False)#Отключаем градиенты вручную
 for x,d in zip(x_train,y_train):
-    y=model(x)
-    print(f'Выходное значение НС: {y.data} => {d}')
+    with torch.no_grad(): #Все что выполняется здесь используется без градиентов
+        y=model(x)
+        print(f'Выходное значение НС: {y.data} => {d}')
 
 
 # layer1 = nn.Linear(in_features=3, out_features=2)
