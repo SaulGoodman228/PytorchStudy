@@ -53,10 +53,12 @@ class DigitNN(nn.Module):
         super().__init__()
         self.layer1 = nn.Linear(input_size, num_classes)
         self.layer2 = nn.Linear(num_classes, output_dim)
+        self.dropout_1 = nn.Dropout1d(0.3)
 
     def forward(self, x):
         x = self.layer1(x)  # Получение значений суммы нейронов
         x = nn.functional.relu(x)  # Функция активации (Гиперболический тангенс)
+        x = self.dropout_1(x)
         x = self.layer2(x)
         return x
 
@@ -73,7 +75,7 @@ train_data = data.DataLoader(d_train, batch_size=32, shuffle=True) #Создан
 train_data_val = data.DataLoader(d_val, batch_size=32, shuffle=False)
 
 
-optimizer = optim.Adam(params=model.parameters(), lr=0.001)
+optimizer = optim.Adam(params=model.parameters(), lr=0.001, weight_decay=0.001)
 loss_function = nn.CrossEntropyLoss()
 epochs = 20
 
