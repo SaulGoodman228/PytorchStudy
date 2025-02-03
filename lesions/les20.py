@@ -1,20 +1,13 @@
 import os
 import json
-
-import torchvision
 from PIL import Image
-from matplotlib import pyplot as plt
 from tqdm import tqdm
 import torch
 import torch.nn as nn
 import torch.utils.data as data
-from torchvision.datasets import ImageFolder
+import torchvision
 import torchvision.transforms.v2 as tfs
 from torch import optim
-
-class RavelTransform(nn.Module):
-    def forward(self, item):
-        return item.ravel()
 
 
 class DigitDataset(data.Dataset):
@@ -62,35 +55,25 @@ class DigitNN(nn.Module):
 
 model = DigitNN(28*28, 32, 10)
 
-transforms = tfs.Compose([tfs.ToImage(),tfs.Grayscale(),
-                         tfs.ToDtype(torch.float32, scale = True),
-                        RavelTransform()])  # tfs.Grayscale() - для преобразования в один цветовой канал
-
-#Стандартный датасет MNIST
-dataset_mnist = torchvision.datasets.MNIST(r'C:\datasets\mnist', download=True, train=True, transform=transforms)
-d_train, d_val = data.random_split(dataset_mnist, [0.7, 0.3]) #Разделение на обучающую и валидационную выборку
-train_data = data.DataLoader(d_train, batch_size=32, shuffle=True) #Создание итераторов для получения батчей
-train_data_val = data.DataLoader(d_val, batch_size=32, shuffle=False)
-
+to_tensor = tfs.ToImage()  # PILToTensor
+d_train = DigitDataset("../Datasets/dataset", transform=to_tensor)
+train_data = data.DataLoader(d_train, batch_size=32, shuffle=True)
+print()
 
 optimizer = optim.Adam(params=model.parameters(), lr=0.001)
-loss_function = nn.CrossEntropyLoss()
-epochs = 20
+loss_fn = nn.CrossEntropyLoss()
 
-loss_lst_val = [] # список значений потерь при валидации
-loss_lst = [] # список значений потерь при обучении
-
-
+epochs = 2
+model.train()
 for e in range(epochs):
-    model.train()
     loss_mean = 0
     lm_count = 0
 
-    train_tqdm = tqdm(train_data, leave=False)
+    train_tqdm = tqdm(train_data, leave=True)
     for x_train, y_train in train_tqdm:
 
         predict = model(x_train)
-        loss = loss_function(predict, y_train)
+        loss = loss_fn(predict, y_train)
 
         optimizer.zero_grad()
         loss.backward()
@@ -100,27 +83,8 @@ for e in range(epochs):
         loss_mean = 1/ lm_count * loss.item() + (1-1/lm_count)*loss_mean #Вычисление среднего значения функции потерь
         train_tqdm.set_description(f'Epoch [{e+1}/{epochs}], Loss_mean: {loss_mean:.4f}] ')
 
-    model.eval()
-    Q_val = 0
-    count_val = 0
-
-    for x_val, y_val in train_data_val:
-        with torch.no_grad():
-            p = model(x_val)
-            loss = loss_function(p, y_val)
-            Q_val += loss.item()
-            count_val += 1
-
-    Q_val /= count_val
-
-    loss_lst.append(loss_mean)
-    loss_lst_val.append(Q_val)
-
-    print(f" | loss_mean={loss_mean:.3f}, Q_val={Q_val:.3f}")
-
-d_test = ImageFolder("dataset/test", transform=transforms)
+d_test = DigitDataset('../Datasets/dataset', train=False, transform=to_tensor)
 test_data = data.DataLoader(d_test, batch_size=500, shuffle=False)
-
 Q = 0
 
 model.eval()
@@ -129,12 +93,8 @@ for x_test, y_test in test_data:
     with torch.no_grad():
         p = model(x_test) #Формируются тензоры 500 на 10
         p = torch.argmax(p, dim=1) #Во второй оси выбирается вектор с макс значением, из-за того что все кроме определнного 0, то выбирается значение
-        Q += torch.sum(p==y_test).item() # Подсчитываем количество правильных классификаций
+        y = torch.argmax(y_test, dim=1)
+        Q += torch.sum(p==y).item() # Подсчитываем количество правильных классификаций
 
 Q /= len(d_test)
 print(Q)
-
-plt.plot(loss_lst)
-plt.plot(loss_lst_val)
-plt.grid()
-plt.show()

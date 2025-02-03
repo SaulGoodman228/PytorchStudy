@@ -41,6 +41,6 @@ class DigitDataset(data.Dataset):
     def __len__(self):
         return self.length
 
-d_train = DigitDataset('dataset')
+d_train = DigitDataset('../Datasets/dataset')
 train_dat = data.DataLoader(d_train, batch_size=32, shuffle=True)
 print()
