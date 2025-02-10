@@ -19,12 +19,12 @@ class WordsRNN(nn.Module):
         self.input_size = input_size
         self.output_size = output_size
 
-        self.rnn = nn.RNN(self.input_size, self.hidden_size, batch_first=True, bidirectional=True)
-        self.out = nn.Linear(self.hidden_size*2, self.output_size)
+        self.rnn = nn.LSTM(self.input_size, self.hidden_size, batch_first=True, bidirectional=True)
+        self.out = nn.Linear(self.hidden_size*4, self.output_size)
 
     def forward(self, x):
-        x,h = self.rnn(x)
-        hh = torch.cat((h[-2,:,:],h[-1,:,:]),dim=1) #Объединение векторов g/h
+        x,(h,c) = self.rnn(x)
+        hh = torch.cat((h[-2,:,:],h[-1,:,:],c[-2,:,:],c[-1,:,:]),dim=1) #Объединение векторов g/h
         y = self.out(hh)
         return y
 
