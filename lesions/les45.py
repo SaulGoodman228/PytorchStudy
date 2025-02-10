@@ -120,7 +120,7 @@ torch.save(st, 'model_rnn_bidir.tar')
 
 model.eval()
 
-phrase = "Сегодня проснулся и поел вкусных блинов"
+phrase = "блин, погоди"
 phrase_lst = phrase.lower().split()
 phrase_lst = [torch.tensor(navec[w]) for w in phrase_lst if w in navec]
 _data_batch = torch.stack(phrase_lst)
